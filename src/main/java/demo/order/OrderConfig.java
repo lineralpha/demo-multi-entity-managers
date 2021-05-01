@@ -62,6 +62,7 @@ public class OrderConfig {
 
 	private EntityManagerFactoryBuilder createEntityManagerFactoryBuilder(JpaProperties orderJpaProperties) {
 		JpaVendorAdapter jpaVendorAdapter = createJpaVendorAdapter(orderJpaProperties);
+        // app.order.jpa.properties.* are passed to the builder
 		return new EntityManagerFactoryBuilder(jpaVendorAdapter, orderJpaProperties.getProperties(),
 				this.persistenceUnitManager);
 	}

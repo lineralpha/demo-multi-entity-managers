@@ -23,7 +23,8 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
 @Configuration
 @EnableJpaRepositories(entityManagerFactoryRef = "customerEntityManager",
-		transactionManagerRef = "customerTransactionManager", basePackageClasses = Customer.class)
+		               transactionManagerRef = "customerTransactionManager",
+                       basePackageClasses = Customer.class)
 public class CustomerConfig {
 
 	private final PersistenceUnitManager persistenceUnitManager;
@@ -32,12 +33,20 @@ public class CustomerConfig {
 		this.persistenceUnitManager = persistenceUnitManager.getIfAvailable();
 	}
 
+    /**
+     * Uses {@code app.customer.jpa.*} to set properties equivalent to {@code spring.jpa.*} in
+     * Spring auto configuration.
+     */
 	@Bean
 	@ConfigurationProperties("app.customer.jpa")
 	public JpaProperties customerJpaProperties() {
 		return new JpaProperties();
 	}
 
+    /**
+     * {@code app.customer.datasource.*} provides properties equivalent to
+     * {@code spring.datasource.*} properties for setting the data source.
+     */
 	@Bean
 	@Primary
 	@ConfigurationProperties("app.customer.datasource")
@@ -45,6 +54,10 @@ public class CustomerConfig {
 		return new DataSourceProperties();
 	}
 
+    /**
+     * {@code app.customer.datasource.properties.*} provides additional settings
+     * passed to the datasource. Same settings as in {@code spring.datasource.hikari.*}.
+     */
 	@Bean
 	@Primary
 	@ConfigurationProperties(prefix = "app.customer.datasource.properties")
@@ -52,8 +65,14 @@ public class CustomerConfig {
 		return customerDataSourceProperties().initializeDataSourceBuilder().type(HikariDataSource.class).build();
 	}
 
+    /**
+     * The {@code EntityManager} that is created using {@code app.customer.jpa.*}
+     * properties and is bound to the customer datasource created using
+     * {@code app.customer.datasource.*} properties.
+     */
 	@Bean
 	public LocalContainerEntityManagerFactoryBean customerEntityManager(JpaProperties customerJpaProperties) {
+        // use "app.customer.jpa.*" properties to instantiate the builder
 		EntityManagerFactoryBuilder builder = createEntityManagerFactoryBuilder(customerJpaProperties);
 		return builder.dataSource(customerDataSource()).packages(Customer.class).persistenceUnit("customersDs").build();
 	}
@@ -65,12 +84,15 @@ public class CustomerConfig {
 	}
 
 	private EntityManagerFactoryBuilder createEntityManagerFactoryBuilder(JpaProperties customerJpaProperties) {
+        // "app.customer.jpa.*" properties are used to create the jpa vendor adapter
 		JpaVendorAdapter jpaVendorAdapter = createJpaVendorAdapter(customerJpaProperties);
+        // additional "app.customer.jpa.properties.*" are passed to the builder
 		return new EntityManagerFactoryBuilder(jpaVendorAdapter, customerJpaProperties.getProperties(),
 				this.persistenceUnitManager);
 	}
 
 	private JpaVendorAdapter createJpaVendorAdapter(JpaProperties jpaProperties) {
+        // use the "app.customer.jpa.*" properties to instantiate the vendor adapter
 		AbstractJpaVendorAdapter adapter = new HibernateJpaVendorAdapter();
 		adapter.setShowSql(jpaProperties.isShowSql());
 		if (jpaProperties.getDatabase() != null) {
